@@ -1,0 +1,5 @@
+# Dùng thêm trên máy chủ cloud: mở cổng 80 cho web.
+services:
+  frontend:
+    ports:
+      - "80:80"

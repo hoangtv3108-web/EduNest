@@ -4,15 +4,47 @@ on: [push, pull_request]
 jobs:
   backend:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: edunest
+          POSTGRES_USER: edunest
+          POSTGRES_PASSWORD: edunest
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U edunest -d edunest"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+
     steps:
       - uses: actions/checkout@v4
+
+      # Khởi tạo roles và database giống hệt môi trường cục bộ
+      - name: Setup PostgreSQL Roles
+        run: |
+          docker cp db/init/01_roles.sql $(docker ps -qf "name=postgres"):/01_roles.sql
+          docker exec $(docker ps -qf "name=postgres") psql -U edunest -d edunest -f /01_roles.sql
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - run: mvn -B test
+
+      - name: Run Backend Tests
+        run: mvn -B test
         working-directory: backend
+        env:
+          DB_URL: jdbc:postgresql://localhost:5432/edunest
+          DB_USER: edunest_app
+          DB_PASSWORD: edunest_app
+          FLYWAY_USER: edunest_owner
+          FLYWAY_PASSWORD: edunest_owner
+          KEYCLOAK_ISSUER_URI: http://localhost:8081/realms/edunest
 
   frontend:
     runs-on: ubuntu-latest

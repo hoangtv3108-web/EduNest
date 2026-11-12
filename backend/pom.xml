@@ -86,6 +86,18 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <!-- Chạy bằng mvn spring-boot:run: tránh tên múi giờ cũ Asia/Saigon bị PostgreSQL từ chối -->
+          <jvmArguments>-Duser.timezone=Asia/Ho_Chi_Minh</jvmArguments>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <!-- Chạy bằng mvn test: cùng lý do như trên -->
+          <argLine>-Duser.timezone=Asia/Ho_Chi_Minh</argLine>
+        </configuration>
       </plugin>
     </plugins>
   </build>

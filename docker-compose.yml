@@ -43,7 +43,9 @@ services:
       FLYWAY_USER: edunest_owner
       FLYWAY_PASSWORD: edunest_owner
       KEYCLOAK_BASE_URL: http://keycloak:8080
-      KEYCLOAK_ISSUER_URI: http://keycloak:8080/realms/edunest
+      KEYCLOAK_ISSUER_URI: http://localhost:8081/realms/edunest
+      KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/edunest/protocol/openid-connect/certs
+
     depends_on:
       db:
         condition: service_healthy

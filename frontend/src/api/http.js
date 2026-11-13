@@ -9,8 +9,13 @@ export class ApiError extends Error {
 }
 
 export async function api(path, { method = 'GET', body, auth = true } = {}) {
+    const isFormData = body instanceof FormData
     const headers = { Accept: 'application/json' }
-    if (body !== undefined) headers['Content-Type'] = 'application/json'
+    
+    if (body !== undefined && !isFormData) {
+        headers['Content-Type'] = 'application/json'
+    }
+    
     if (auth) {
         const token = await getAccessToken()
         if (!token) throw new ApiError(401, 'Phiên đăng nhập đã hết hạn')
@@ -22,7 +27,7 @@ export async function api(path, { method = 'GET', body, auth = true } = {}) {
         res = await fetch(path, {
             method,
             headers,
-            body: body === undefined ? undefined : JSON.stringify(body),
+            body: body === undefined ? undefined : (isFormData ? body : JSON.stringify(body)),
         })
     } catch {
         throw new ApiError(0, 'Không kết nối được máy chủ')

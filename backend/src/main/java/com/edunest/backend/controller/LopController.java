@@ -63,13 +63,25 @@ public class LopController {
     }
 
     /**
-     * Tự động sinh danh sách buổi học theo lịch tuần.
+     * CHẾ ĐỘ 1: Thêm buổi học thủ công (Manual)
+     */
+    @PostMapping("/{id}/buoi-hoc-thu-cong")
+    public ResponseEntity<BuoiHocResponse> taoBuoiHocThuCong(
+            @PathVariable UUID id,
+            @Valid @RequestBody TaoBuoiHocThuCongRequest req) {
+        req.setLopId(id);
+        BuoiHocResponse res = lopService.taoBuoiHocThuCong(req);
+        return ResponseEntity.status(HttpStatus.CREATED).body(res);
+    }
+
+    /**
+     * CHẾ ĐỘ 2: Tự động sinh danh sách buổi học theo lịch tuần (Schedule-based)
      */
     @PostMapping("/{id}/sinh-buoi-hoc")
-    public ResponseEntity<List<BuoiHocResponse>> sinhBuoiHoc(
+    public ResponseEntity<SinhBuoiHocKetQuaResponse> sinhBuoiHoc(
             @PathVariable UUID id,
             @Valid @RequestBody SinhBuoiHocRequest req) {
-        List<BuoiHocResponse> res = lopService.sinhBuoiHoc(id, req);
+        SinhBuoiHocKetQuaResponse res = lopService.sinhBuoiHoc(id, req);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
@@ -81,4 +93,3 @@ public class LopController {
         return ResponseEntity.ok(lopService.layDanhSachBuoiHoc(id));
     }
 }
-

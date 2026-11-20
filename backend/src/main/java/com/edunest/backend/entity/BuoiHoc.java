@@ -7,7 +7,9 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "buoi_hoc")
+@Table(name = "buoi_hoc", uniqueConstraints = {
+    @UniqueConstraint(name = "uq_buoi_hoc_lop_ngay_gio", columnNames = {"lop_id", "ngay_hoc", "gio_bat_dau"})
+})
 public class BuoiHoc {
 
     @Id
@@ -26,16 +28,20 @@ public class BuoiHoc {
     @Column(name = "gio_bat_dau", nullable = false)
     private LocalTime gioBatDau;
 
+    @Column(name = "gio_ket_thuc", nullable = false)
+    private LocalTime gioKetThuc;
+
     @Column(name = "ngay_tao", nullable = false)
     private OffsetDateTime ngayTao = OffsetDateTime.now();
 
     public BuoiHoc() {}
 
-    public BuoiHoc(UUID tenantId, UUID lopId, LocalDate ngayHoc, LocalTime gioBatDau) {
+    public BuoiHoc(UUID tenantId, UUID lopId, LocalDate ngayHoc, LocalTime gioBatDau, LocalTime gioKetThuc) {
         this.tenantId = tenantId;
         this.lopId = lopId;
         this.ngayHoc = ngayHoc;
         this.gioBatDau = gioBatDau;
+        this.gioKetThuc = gioKetThuc != null ? gioKetThuc : gioBatDau.plusMinutes(90);
         this.ngayTao = OffsetDateTime.now();
     }
 
@@ -54,7 +60,9 @@ public class BuoiHoc {
     public LocalTime getGioBatDau() { return gioBatDau; }
     public void setGioBatDau(LocalTime gioBatDau) { this.gioBatDau = gioBatDau; }
 
+    public LocalTime getGioKetThuc() { return gioKetThuc; }
+    public void setGioKetThuc(LocalTime gioKetThuc) { this.gioKetThuc = gioKetThuc; }
+
     public OffsetDateTime getNgayTao() { return ngayTao; }
     public void setNgayTao(OffsetDateTime ngayTao) { this.ngayTao = ngayTao; }
 }
-

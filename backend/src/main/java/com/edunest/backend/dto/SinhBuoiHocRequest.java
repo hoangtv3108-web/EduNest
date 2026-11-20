@@ -1,6 +1,5 @@
 package com.edunest.backend.dto;
 
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -22,6 +21,12 @@ public class SinhBuoiHocRequest {
     @NotNull(message = "Giờ bắt đầu không được để trống")
     private LocalTime gioBatDau;
 
+    private Integer thoiLuongPhut = 90; // Mặc định 90 phút nếu không truyền
+    private LocalTime gioKetThuc;
+
+    private boolean boQuaKhiTrungLich = true; // Nếu trùng thì bỏ qua ngày đó và sinh bù buổi kế tiếp
+    private boolean choPhepNgayQuaKhu = false; // Mặc định không cho phép ngày trong quá khứ
+
     public SinhBuoiHocRequest() {}
 
     public SinhBuoiHocRequest(LocalDate ngayBatDau, int soBuoi, List<Integer> thuTrongTuan, LocalTime gioBatDau) {
@@ -29,6 +34,7 @@ public class SinhBuoiHocRequest {
         this.soBuoi = soBuoi;
         this.thuTrongTuan = thuTrongTuan;
         this.gioBatDau = gioBatDau;
+        this.thoiLuongPhut = 90;
     }
 
     public LocalDate getNgayBatDau() { return ngayBatDau; }
@@ -42,5 +48,16 @@ public class SinhBuoiHocRequest {
 
     public LocalTime getGioBatDau() { return gioBatDau; }
     public void setGioBatDau(LocalTime gioBatDau) { this.gioBatDau = gioBatDau; }
-}
 
+    public Integer getThoiLuongPhut() { return thoiLuongPhut; }
+    public void setThoiLuongPhut(Integer thoiLuongPhut) { this.thoiLuongPhut = thoiLuongPhut; }
+
+    public LocalTime getGioKetThuc() { return gioKetThuc; }
+    public void setGioKetThuc(LocalTime gioKetThuc) { this.gioKetThuc = gioKetThuc; }
+
+    public boolean isBoQuaKhiTrungLich() { return boQuaKhiTrungLich; }
+    public void setBoQuaKhiTrungLich(boolean boQuaKhiTrungLich) { this.boQuaKhiTrungLich = boQuaKhiTrungLich; }
+
+    public boolean isChoPhepNgayQuaKhu() { return choPhepNgayQuaKhu; }
+    public void setChoPhepNgayQuaKhu(boolean choPhepNgayQuaKhu) { this.choPhepNgayQuaKhu = choPhepNgayQuaKhu; }
+}

@@ -9,14 +9,16 @@ public class BuoiHocResponse {
     private UUID lopId;
     private LocalDate ngayHoc;
     private LocalTime gioBatDau;
+    private LocalTime gioKetThuc;
 
     public BuoiHocResponse() {}
 
-    public BuoiHocResponse(UUID id, UUID lopId, LocalDate ngayHoc, LocalTime gioBatDau) {
+    public BuoiHocResponse(UUID id, UUID lopId, LocalDate ngayHoc, LocalTime gioBatDau, LocalTime gioKetThuc) {
         this.id = id;
         this.lopId = lopId;
         this.ngayHoc = ngayHoc;
         this.gioBatDau = gioBatDau;
+        this.gioKetThuc = gioKetThuc;
     }
 
     public UUID getId() { return id; }
@@ -30,5 +32,7 @@ public class BuoiHocResponse {
 
     public LocalTime getGioBatDau() { return gioBatDau; }
     public void setGioBatDau(LocalTime gioBatDau) { this.gioBatDau = gioBatDau; }
-}
 
+    public LocalTime getGioKetThuc() { return gioKetThuc; }
+    public void setGioKetThuc(LocalTime gioKetThuc) { this.gioKetThuc = gioKetThuc; }
+}

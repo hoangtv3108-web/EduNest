@@ -52,5 +52,13 @@ public class HocVienController {
     public ResponseEntity<List<HocVienChiTietResponse>> layDanhSachHocVien() {
         return ResponseEntity.ok(hocVienExcelService.layDanhSachHocVien());
     }
+
+    /**
+     * API lấy danh sách học viên KHẢ DỤNG để ghi danh (chưa theo học lớp nào).
+     */
+    @GetMapping("/kha-dung-ghi-danh")
+    public ResponseEntity<List<HocVienChiTietResponse>> layDanhSachHocVienKhaDung() {
+        return ResponseEntity.ok(hocVienExcelService.layDanhSachHocVienKhaDung());
+    }
 }
 

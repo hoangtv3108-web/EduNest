@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -39,12 +40,26 @@ public class GhiDanhController {
     }
 
     /**
-     * Hủy ghi danh học viên.
+     * Hủy/kết thúc ghi danh học viên (bảo toàn lịch sử hóa đơn).
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> huyGhiDanh(@PathVariable UUID id) {
         ghiDanhService.huyGhiDanh(id);
         return ResponseEntity.noContent().build();
     }
-}
 
+    /**
+     * Đổi trạng thái ghi danh (DANG_HOC, TAM_NGHI, DA_NGHI, HOAN_THANH).
+     */
+    @PatchMapping("/{id}/trang-thai")
+    public ResponseEntity<Void> doiTrangThai(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body) {
+        String trangThai = body.get("trangThai");
+        if (trangThai == null || trangThai.isBlank()) {
+            return ResponseEntity.badRequest().build();
+        }
+        ghiDanhService.doiTrangThai(id, trangThai);
+        return ResponseEntity.noContent().build();
+    }
+}

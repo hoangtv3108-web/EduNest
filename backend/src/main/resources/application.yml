@@ -1,4 +1,12 @@
 spring:
+  mail:
+    host: ${SMTP_HOST:}           
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail.smtp.auth: ${SMTP_AUTH:true}
+      mail.smtp.starttls.enable: ${SMTP_STARTTLS:true}
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/edunest}
     username: ${DB_USER:edunest_app}
@@ -27,3 +35,18 @@ management:
   endpoint:
     health:
       show-details: always
+
+edunest:
+  nhac-no:
+    bat-tu-dong: ${NHAC_NO_BAT_TU_DONG:true}
+    cron: ${NHAC_NO_CRON:0 0 8 * * *}          
+    so-ngay-truoc-toi-thieu: 2                  
+    so-ngay-truoc-toi-da: 3
+    so-lan-thu-lai-toi-da: 3                   
+    kenh-gui: ${NHAC_NO_KENH_GUI:EMAIL}         
+    email:
+      tu-dia-chi: ${NHAC_NO_EMAIL_FROM:no-reply@edunest.local}
+    zalo:
+      webhook-url: ${ZALO_ZNS_WEBHOOK_URL:}
+      access-token: ${ZALO_ZNS_ACCESS_TOKEN:}
+      template-id: ${ZALO_ZNS_TEMPLATE_ID:}

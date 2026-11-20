@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react'
 import { layTrungTamHienTai } from '../api/tenantApi'
+import BaoCaoAuditTab from './BaoCaoAuditTab'
 import { useAuth } from '../auth/AuthContext'
 import {
     previewExcelHocVien,
     importExcelHocVien,
     layDanhSachHocVien,
+    layDanhSachHocVienKhaDung,
     layDanhSachLop,
     taoLop,
     xoaLop,
+    taoBuoiHocThuCong,
     sinhBuoiHoc,
     layDanhSachBuoiHoc,
     ghiDanhHocVien,
     layDanhSachGhiDanh,
     huyGhiDanh,
+    doiTrangThaiGhiDanh,
     layBangDiemDanh,
     capNhatDiemDanh,
     tinhHocPhi,
@@ -54,24 +58,39 @@ export default function DashboardPage() {
     const [tenLopMoi, setTenLopMoi] = useState('')
     const [hocPhiMoi, setHocPhiMoi] = useState('150000')
     const [selectedLopForSchedule, setSelectedLopForSchedule] = useState(null)
+    const [cheDoNhapLich, setCheDoNhapLich] = useState('dinh-ky') // 'dinh-ky' hoặc 'thu-cong'
+
+    // Buổi học: Định kỳ
     const [ngayBatDau, setNgayBatDau] = useState(new Date().toISOString().split('T')[0])
     const [soBuoi, setSoBuoi] = useState(12)
-    const [thuSelected, setThuSelected] = useState([1, 3, 5]) // Mon, Wed, Fri
+    const [thuSelected, setThuSelected] = useState([1, 3, 5]) // Thứ 2, 4, 6
     const [gioBatDau, setGioBatDau] = useState('18:00')
+    const [thoiLuongDinhKy, setThoiLuongDinhKy] = useState(90)
+    const [boQuaKhiTrungLich, setBoQuaKhiTrungLich] = useState(true)
+    const [choPhepQuaKhuDinhKy, setChoPhepQuaKhuDinhKy] = useState(false)
+    const [dsBiBoQua, setDsBiBoQua] = useState([])
+
+    // Buổi học: Thủ công
+    const [ngayHocThuCong, setNgayHocThuCong] = useState(new Date().toISOString().split('T')[0])
+    const [gioBatDauThuCong, setGioBatDauThuCong] = useState('18:00')
+    const [thoiLuongThuCong, setThoiLuongThuCong] = useState(90)
+    const [choPhepQuaKhuThuCong, setChoPhepQuaKhuThuCong] = useState(false)
+
     const [buoiHocs, setBuoiHocs] = useState([])
 
-    // Module 3 states
+    // Module 3 states (Ghi danh)
     const [selectedLopGhiDanh, setSelectedLopGhiDanh] = useState('')
     const [dsGhiDanh, setDsGhiDanh] = useState([])
+    const [hocViensKhaDung, setHocViensKhaDung] = useState([])
     const [selectedHvIds, setSelectedHvIds] = useState([])
 
-    // Module 4 states
+    // Module 4 states (Điểm danh)
     const [selectedLopDiemDanh, setSelectedLopDiemDanh] = useState('')
     const [buoiHocDiemDanhList, setBuoiHocDiemDanhList] = useState([])
     const [selectedBuoiHocId, setSelectedBuoiHocId] = useState('')
     const [bangDiemDanh, setBangDiemDanh] = useState([])
 
-    // Module 5 states
+    // Module 5 states (Học phí)
     const [selectedLopHocPhi, setSelectedLopHocPhi] = useState('')
     const [kyHocPhi, setKyHocPhi] = useState('Tháng 11/2026')
     const [hanDong, setHanDong] = useState('2026-11-30')
@@ -82,6 +101,7 @@ export default function DashboardPage() {
         setActiveTab(tab)
         setError('')
         setSuccessMsg('')
+        setDsBiBoQua([])
     }
 
     // Load initial tenant info
@@ -89,8 +109,9 @@ export default function DashboardPage() {
         layTrungTamHienTai().then(setTenant).catch((e) => setError(e.message))
     }, [])
 
-    // Load students & classes when entering relevant tabs
+    // Refresh functions
     const refreshHocViens = () => layDanhSachHocVien().then(setHocViens).catch(e => setError(e.message))
+    const refreshHocViensKhaDung = () => layDanhSachHocVienKhaDung().then(setHocViensKhaDung).catch(e => setError(e.message))
     const refreshLops = () => layDanhSachLop().then(setLops).catch(e => setError(e.message))
     const refreshHoaDons = () => layDanhSachHoaDon().then(setHoaDons).catch(e => setError(e.message))
 
@@ -99,7 +120,9 @@ export default function DashboardPage() {
         if (activeTab === 'lop' || activeTab === 'ghi-danh' || activeTab === 'diem-danh' || activeTab === 'hoc-phi') {
             refreshLops()
         }
-        if (activeTab === 'ghi-danh' || activeTab === 'hoc-vien') refreshHocViens()
+        if (activeTab === 'ghi-danh') {
+            refreshHocViensKhaDung()
+        }
         if (activeTab === 'hoc-phi') refreshHoaDons()
     }, [activeTab])
 
@@ -158,23 +181,56 @@ export default function DashboardPage() {
 
     const handleXemBuoiHoc = async (lop) => {
         setSelectedLopForSchedule(lop)
+        setDsBiBoQua([])
         const list = await layDanhSachBuoiHoc(lop.id).catch(() => [])
         setBuoiHocs(list)
     }
 
-    const handleSinhBuoiHoc = async (e) => {
+    // Chế độ 1: Tạo buổi học thủ công
+    const handleTaoBuoiHocThuCong = async (e) => {
         e.preventDefault()
         if (!selectedLopForSchedule) return
         setError(''); setSuccessMsg('')
+        try {
+            await taoBuoiHocThuCong(selectedLopForSchedule.id, {
+                lopId: selectedLopForSchedule.id,
+                ngayHoc: ngayHocThuCong,
+                gioBatDau: gioBatDauThuCong.length === 5 ? `${gioBatDauThuCong}:00` : gioBatDauThuCong,
+                thoiLuongPhut: Number(thoiLuongThuCong),
+                choPhepNgayQuaKhu: choPhepQuaKhuThuCong
+            })
+            setSuccessMsg(`Tạo thành công buổi học ngày ${ngayHocThuCong}!`)
+            const list = await layDanhSachBuoiHoc(selectedLopForSchedule.id)
+            setBuoiHocs(list)
+            refreshLops()
+        } catch (e) { setError(e.message) }
+    }
+
+    // Chế độ 2: Sinh buổi học định kỳ
+    const handleSinhBuoiHocDinhKy = async (e) => {
+        e.preventDefault()
+        if (!selectedLopForSchedule) return
+        setError(''); setSuccessMsg(''); setDsBiBoQua([])
         try {
             const res = await sinhBuoiHoc(selectedLopForSchedule.id, {
                 ngayBatDau,
                 soBuoi: Number(soBuoi),
                 thuTrongTuan: thuSelected,
-                gioBatDau: gioBatDau.length === 5 ? `${gioBatDau}:00` : gioBatDau
+                gioBatDau: gioBatDau.length === 5 ? `${gioBatDau}:00` : gioBatDau,
+                thoiLuongPhut: Number(thoiLuongDinhKy),
+                boQuaKhiTrungLich,
+                choPhepNgayQuaKhu: choPhepQuaKhuDinhKy
             })
-            setBuoiHocs(res)
-            setSuccessMsg(`Tự động sinh thành công ${res.length} buổi học!`)
+
+            const list = await layDanhSachBuoiHoc(selectedLopForSchedule.id)
+            setBuoiHocs(list)
+            setDsBiBoQua(res.danhSachBiBoQua || [])
+
+            if (res.soBuoiBiBoQua > 0) {
+                setSuccessMsg(`Đã sinh thành công ${res.soBuoiThanhCong} buổi học. Có ${res.soBuoiBiBoQua} buổi bị bỏ qua do trùng lịch/nghỉ!`)
+            } else {
+                setSuccessMsg(`Tự động sinh thành công trọn vẹn ${res.soBuoiThanhCong} buổi học!`)
+            }
             refreshLops()
         } catch (e) { setError(e.message) }
     }
@@ -183,6 +239,7 @@ export default function DashboardPage() {
     useEffect(() => {
         if (selectedLopGhiDanh) {
             layDanhSachGhiDanh(selectedLopGhiDanh).then(setDsGhiDanh).catch(e => setError(e.message))
+            refreshHocViensKhaDung()
         } else {
             setDsGhiDanh([])
         }
@@ -203,16 +260,28 @@ export default function DashboardPage() {
             setDsGhiDanh(res)
             setSelectedHvIds([])
             setSuccessMsg('Ghi danh học viên thành công!')
+            refreshHocViensKhaDung()
             refreshLops()
         } catch (e) { setError(e.message) }
     }
 
     const handleHuyGhiDanh = async (id) => {
-        if (!confirm('Bạn có muốn hủy ghi danh học viên này?')) return
+        if (!confirm('Bạn có muốn hủy ghi danh học viên này? (Nếu đã có hóa đơn học phí, hệ thống sẽ tự động chuyển sang trạng thái ĐÃ NGHỈ để bảo toàn sổ sách)')) return
         try {
             await huyGhiDanh(id)
-            setSuccessMsg('Đã hủy ghi danh')
+            setSuccessMsg('Đã cập nhật trạng thái ghi danh!')
             layDanhSachGhiDanh(selectedLopGhiDanh).then(setDsGhiDanh)
+            refreshHocViensKhaDung()
+            refreshLops()
+        } catch (e) { setError(e.message) }
+    }
+
+    const handleDoiTrangThaiGhiDanh = async (id, trangThai) => {
+        try {
+            await doiTrangThaiGhiDanh(id, trangThai)
+            setSuccessMsg(`Đã chuyển trạng thái ghi danh thành ${trangThai}`)
+            layDanhSachGhiDanh(selectedLopGhiDanh).then(setDsGhiDanh)
+            refreshHocViensKhaDung()
             refreshLops()
         } catch (e) { setError(e.message) }
     }
@@ -317,7 +386,13 @@ export default function DashboardPage() {
                 <button className={`tab-btn ${activeTab === 'hoc-phi' ? 'active' : ''}`} onClick={() => switchTab('hoc-phi')}>
                     5. Tính học phí
                 </button>
+                <button className={`tab-btn ${activeTab === 'bao-cao' ? 'active' : ''}`} onClick={() => switchTab('bao-cao')}>
+                    6. Báo cáo & Audit Log
+                </button>
             </nav>
+
+            {/* TAB 6: BÁO CÁO & AUDIT LOG */}
+            {activeTab === 'bao-cao' && <BaoCaoAuditTab />}
 
             {/* TAB 1: HỌC VIÊN & EXCEL */}
             {activeTab === 'hoc-vien' && (
@@ -486,68 +561,149 @@ export default function DashboardPage() {
                         <div>
                             {selectedLopForSchedule ? (
                                 <div className="form-box">
-                                    <h3>Sinh Buổi Học Tự Động: {selectedLopForSchedule.tenLop}</h3>
-                                    <form onSubmit={handleSinhBuoiHoc}>
-                                        <label className="field">
-                                            <span>Ngày bắt đầu</span>
-                                            <input type="date" value={ngayBatDau} onChange={e => setNgayBatDau(e.target.value)} required />
-                                        </label>
-                                        <label className="field">
-                                            <span>Số buổi học cần sinh</span>
-                                            <input type="number" value={soBuoi} onChange={e => setSoBuoi(e.target.value)} min="1" max="100" required />
-                                        </label>
-                                        <label className="field">
-                                            <span>Giờ bắt đầu</span>
-                                            <input type="time" value={gioBatDau} onChange={e => setGioBatDau(e.target.value)} required />
-                                        </label>
-                                        <div style={{ marginBottom: 12 }}>
-                                            <span style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: 4 }}>Thứ trong tuần:</span>
-                                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                                {THU_IN_WEEK.map(t => (
-                                                    <label key={t.val} style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={thuSelected.includes(t.val)}
-                                                            onChange={e => {
-                                                                if (e.target.checked) setThuSelected([...thuSelected, t.val])
-                                                                else setThuSelected(thuSelected.filter(v => v !== t.val))
-                                                            }}
-                                                        />
-                                                        {t.label}
-                                                    </label>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <button type="submit" className="btn-sm btn-success" style={{ width: 'auto' }}>
-                                            ⚡ Tự động sinh {soBuoi} buổi học
+                                    <h3>Thiết lập Lịch học: {selectedLopForSchedule.tenLop}</h3>
+                                    
+                                    {/* Toggle 2 chế độ nhập ngày */}
+                                    <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                                        <button
+                                            type="button"
+                                            className={`btn-sm ${cheDoNhapLich === 'dinh-ky' ? 'btn-success' : 'secondary'}`}
+                                            onClick={() => setCheDoNhapLich('dinh-ky')}
+                                        >
+                                            ⚡ 1. Theo lịch định kỳ (Auto)
                                         </button>
-                                    </form>
+                                        <button
+                                            type="button"
+                                            className={`btn-sm ${cheDoNhapLich === 'thu-cong' ? 'btn-success' : 'secondary'}`}
+                                            onClick={() => setCheDoNhapLich('thu-cong')}
+                                        >
+                                            ✍️ 2. Nhập thủ công (Manual)
+                                        </button>
+                                    </div>
 
-                                    <h4 style={{ marginTop: 18, marginBottom: 8 }}>Lịch các buổi học ({buoiHocs.length})</h4>
+                                    {/* CHẾ ĐỘ 1: THEO LỊCH ĐỊNH KỲ */}
+                                    {cheDoNhapLich === 'dinh-ky' && (
+                                        <form onSubmit={handleSinhBuoiHocDinhKy}>
+                                            <label className="field">
+                                                <span>Ngày bắt đầu</span>
+                                                <input type="date" value={ngayBatDau} onChange={e => setNgayBatDau(e.target.value)} required />
+                                            </label>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                                                <label className="field">
+                                                    <span>Số buổi cần sinh</span>
+                                                    <input type="number" value={soBuoi} onChange={e => setSoBuoi(e.target.value)} min="1" max="100" required />
+                                                </label>
+                                                <label className="field">
+                                                    <span>Thời lượng (phút)</span>
+                                                    <input type="number" value={thoiLuongDinhKy} onChange={e => setThoiLuongDinhKy(e.target.value)} min="15" step="15" required />
+                                                </label>
+                                            </div>
+                                            <label className="field">
+                                                <span>Giờ bắt đầu</span>
+                                                <input type="time" value={gioBatDau} onChange={e => setGioBatDau(e.target.value)} required />
+                                            </label>
+                                            <div style={{ marginBottom: 12 }}>
+                                                <span style={{ fontSize: '0.875rem', fontWeight: 500, display: 'block', marginBottom: 4 }}>Thứ trong tuần:</span>
+                                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                                    {THU_IN_WEEK.map(t => (
+                                                        <label key={t.val} style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={thuSelected.includes(t.val)}
+                                                                onChange={e => {
+                                                                    if (e.target.checked) setThuSelected([...thuSelected, t.val])
+                                                                    else setThuSelected(thuSelected.filter(v => v !== t.val))
+                                                                }}
+                                                            />
+                                                            {t.label}
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 14 }}>
+                                                <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <input type="checkbox" checked={boQuaKhiTrungLich} onChange={e => setBoQuaKhiTrungLich(e.target.checked)} />
+                                                    Tự động bỏ qua và cảnh báo nếu ngày bị trùng lịch giáo viên/lớp
+                                                </label>
+                                                <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <input type="checkbox" checked={choPhepQuaKhuDinhKy} onChange={e => setChoPhepQuaKhuDinhKy(e.target.checked)} />
+                                                    Cho phép sinh ngày trong quá khứ (nhập bù dữ liệu cũ)
+                                                </label>
+                                            </div>
+                                            <button type="submit" className="btn-sm btn-success" style={{ width: 'auto' }}>
+                                                ⚡ Tự động sinh {soBuoi} buổi học
+                                            </button>
+                                        </form>
+                                    )}
+
+                                    {/* CHẾ ĐỘ 2: NHẬP THỦ CÔNG */}
+                                    {cheDoNhapLich === 'thu-cong' && (
+                                        <form onSubmit={handleTaoBuoiHocThuCong}>
+                                            <label className="field">
+                                                <span>Ngày học cụ thể</span>
+                                                <input type="date" value={ngayHocThuCong} onChange={e => setNgayHocThuCong(e.target.value)} required />
+                                            </label>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                                                <label className="field">
+                                                    <span>Giờ bắt đầu</span>
+                                                    <input type="time" value={gioBatDauThuCong} onChange={e => setGioBatDauThuCong(e.target.value)} required />
+                                                </label>
+                                                <label className="field">
+                                                    <span>Thời lượng (phút)</span>
+                                                    <input type="number" value={thoiLuongThuCong} onChange={e => setThoiLuongThuCong(e.target.value)} min="15" step="15" required />
+                                                </label>
+                                            </div>
+                                            <label style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
+                                                <input type="checkbox" checked={choPhepQuaKhuThuCong} onChange={e => setChoPhepQuaKhuThuCong(e.target.checked)} />
+                                                Cho phép nhập ngày trong quá khứ (nhập bù)
+                                            </label>
+                                            <button type="submit" className="btn-sm btn-success" style={{ width: 'auto' }}>
+                                                + Lưu buổi học thủ công
+                                            </button>
+                                        </form>
+                                    )}
+
+                                    {/* Cảnh báo các buổi bị bỏ qua do xung đột */}
+                                    {dsBiBoQua.length > 0 && (
+                                        <div style={{ marginTop: 14, padding: 10, background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8 }}>
+                                            <strong style={{ color: '#b45309' }}>⚠️ Danh sách buổi bị bỏ qua do xung đột:</strong>
+                                            <ul style={{ margin: '6px 0 0', paddingLeft: 20, fontSize: '0.85rem', color: '#92400e' }}>
+                                                {dsBiBoQua.map((item, i) => (
+                                                    <li key={i}>Ngày {item.ngayHoc} ({item.gioBatDau} - {item.gioKetThuc}): {item.lyDo}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    <h4 style={{ marginTop: 18, marginBottom: 8 }}>Lịch các buổi học hiện có ({buoiHocs.length})</h4>
                                     <div style={{ maxHeight: 220, overflowY: 'auto' }}>
                                         <table className="data-table">
                                             <thead>
                                                 <tr>
                                                     <th>STT</th>
                                                     <th>Ngày học</th>
-                                                    <th>Giờ bắt đầu</th>
+                                                    <th>Khung giờ</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {buoiHocs.map((bh, idx) => (
-                                                    <tr key={bh.id}>
-                                                        <td>Buổi {idx + 1}</td>
-                                                        <td>{bh.ngayHoc}</td>
-                                                        <td>{bh.gioBatDau}</td>
-                                                    </tr>
-                                                ))}
+                                                {buoiHocs.length === 0 ? (
+                                                    <tr><td colSpan="3" className="muted" style={{ textAlign: 'center' }}>Chưa có buổi học nào</td></tr>
+                                                ) : (
+                                                    buoiHocs.map((bh, idx) => (
+                                                        <tr key={bh.id}>
+                                                            <td>Buổi {idx + 1}</td>
+                                                            <td>{bh.ngayHoc}</td>
+                                                            <td>{bh.gioBatDau} - {bh.gioKetThuc || '90p'}</td>
+                                                        </tr>
+                                                    ))
+                                                )}
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="form-box muted" style={{ textAlign: 'center', padding: 40 }}>
-                                    Chọn một lớp học ở bên trái để thiết lập lịch học và tự động sinh các buổi học.
+                                    Chọn một lớp học ở bên trái để thiết lập lịch học và xem các buổi học.
                                 </div>
                             )}
                         </div>
@@ -576,27 +732,32 @@ export default function DashboardPage() {
                                 ))}
                             </select>
 
-                            <h3>2. Chọn Học Viên Để Thêm</h3>
+                            <h3>2. Chọn Học Viên Khả Dụng ({hocViensKhaDung.length})</h3>
+                            <p className="muted" style={{ fontSize: '0.8rem', marginBottom: 8 }}>
+                                🔒 <strong>Quy tắc nghiệp vụ:</strong> Học viên đang theo học bất kỳ lớp nào trong trung tâm sẽ tự động được ẩn khỏi danh sách dưới đây để chống trùng/chéo lớp.
+                            </p>
                             <div style={{ maxHeight: 250, overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: 8, padding: 8 }}>
-                                {hocViens.map(hv => {
-                                    const isEnrolled = dsGhiDanh.some(g => g.hocVienId === hv.id)
-                                    return (
+                                {hocViensKhaDung.length === 0 ? (
+                                    <div className="muted" style={{ textAlign: 'center', padding: 20 }}>
+                                        Không có học viên nào đang rảnh (tất cả học viên đều đã được ghi danh vào các lớp).
+                                    </div>
+                                ) : (
+                                    hocViensKhaDung.map(hv => (
                                         <label key={hv.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 4px', borderBottom: '1px solid #f3f4f6' }}>
                                             <input
                                                 type="checkbox"
-                                                disabled={isEnrolled}
                                                 checked={selectedHvIds.includes(hv.id)}
                                                 onChange={e => {
                                                     if (e.target.checked) setSelectedHvIds([...selectedHvIds, hv.id])
                                                     else setSelectedHvIds(selectedHvIds.filter(id => id !== hv.id))
                                                 }}
                                             />
-                                            <span style={{ color: isEnrolled ? '#9ca3af' : '#111827' }}>
-                                                {hv.hoTen} {hv.sdtZalo ? `(${hv.sdtZalo})` : ''} {isEnrolled ? '- Đã có trong lớp' : ''}
+                                            <span>
+                                                <strong>{hv.hoTen}</strong> {hv.sdtZalo ? `(${hv.sdtZalo})` : ''}
                                             </span>
                                         </label>
-                                    )
-                                })}
+                                    ))
+                                )}
                             </div>
 
                             <button
@@ -609,13 +770,13 @@ export default function DashboardPage() {
                         </div>
 
                         <div>
-                            <h3>Học viên đang học trong lớp ({dsGhiDanh.length})</h3>
+                            <h3>Học viên trong lớp ({dsGhiDanh.length})</h3>
                             <table className="data-table">
                                 <thead>
                                     <tr>
                                         <th>Học viên</th>
                                         <th>Phụ huynh</th>
-                                        <th>Ngày bắt đầu</th>
+                                        <th>Trạng thái</th>
                                         <th>Thao tác</th>
                                     </tr>
                                 </thead>
@@ -627,9 +788,32 @@ export default function DashboardPage() {
                                             <tr key={gd.id}>
                                                 <td><strong>{gd.tenHocVien}</strong></td>
                                                 <td>{gd.tenPhuHuynh || '-'} {gd.sdtZalo ? `(${gd.sdtZalo})` : ''}</td>
-                                                <td>{gd.ngayBatDau}</td>
                                                 <td>
-                                                    <button className="btn-sm btn-danger" onClick={() => handleHuyGhiDanh(gd.id)}>Hủy</button>
+                                                    {gd.trangThai === 'DANG_HOC' ? (
+                                                        <span className="badge badge-success">Đang học</span>
+                                                    ) : (
+                                                        <span className="badge" style={{ background: '#e5e7eb', color: '#374151' }}>{gd.trangThai}</span>
+                                                    )}
+                                                </td>
+                                                <td>
+                                                    <div className="btn-group">
+                                                        {gd.trangThai === 'DANG_HOC' && (
+                                                            <button 
+                                                                className="btn-sm secondary" 
+                                                                title="Chuyển trạng thái sang ĐÃ NGHỈ để bảo toàn lịch sử hóa đơn"
+                                                                onClick={() => handleDoiTrangThaiGhiDanh(gd.id, 'DA_NGHI')}
+                                                            >
+                                                                Nghỉ học
+                                                            </button>
+                                                        )}
+                                                        <button 
+                                                            className="btn-sm btn-danger" 
+                                                            title="Xóa ghi danh"
+                                                            onClick={() => handleHuyGhiDanh(gd.id)}
+                                                        >
+                                                            Hủy
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))

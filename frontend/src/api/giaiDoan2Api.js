@@ -15,6 +15,8 @@ export const importExcelHocVien = (file) => {
 
 export const layDanhSachHocVien = () => api('/api/hoc-vien')
 
+export const layDanhSachHocVienKhaDung = () => api('/api/hoc-vien/kha-dung-ghi-danh')
+
 // --- Module 2: Lớp học & Buổi học ---
 export const layDanhSachLop = () => api('/api/lop')
 
@@ -24,6 +26,11 @@ export const capNhatLop = (id, payload) => api(`/api/lop/${id}`, { method: 'PUT'
 
 export const xoaLop = (id) => api(`/api/lop/${id}`, { method: 'DELETE' })
 
+// Chế độ 1: Thủ công
+export const taoBuoiHocThuCong = (lopId, payload) =>
+    api(`/api/lop/${lopId}/buoi-hoc-thu-cong`, { method: 'POST', body: payload })
+
+// Chế độ 2: Sinh theo lịch định kỳ
 export const sinhBuoiHoc = (lopId, payload) =>
     api(`/api/lop/${lopId}/sinh-buoi-hoc`, { method: 'POST', body: payload })
 
@@ -35,6 +42,9 @@ export const ghiDanhHocVien = (payload) => api('/api/ghi-danh', { method: 'POST'
 export const layDanhSachGhiDanh = (lopId) => api(`/api/ghi-danh/lop/${lopId}`)
 
 export const huyGhiDanh = (id) => api(`/api/ghi-danh/${id}`, { method: 'DELETE' })
+
+export const doiTrangThaiGhiDanh = (id, trangThai) =>
+    api(`/api/ghi-danh/${id}/trang-thai`, { method: 'PATCH', body: { trangThai } })
 
 // --- Module 4: Điểm danh ---
 export const layBangDiemDanh = (buoiHocId) => api(`/api/diem-danh/buoi-hoc/${buoiHocId}`)
@@ -54,4 +64,3 @@ export const layDanhSachHoaDon = (lopId = '', kyHocPhi = '') => {
 
 export const capNhatTrangThaiHoaDon = (id, trangThai) =>
     api(`/api/hoa-don/${id}/trang-thai`, { method: 'PATCH', body: { trangThai } })
-

@@ -173,6 +173,35 @@ public class HocVienExcelService {
         return res;
     }
 
+    /**
+     * Lấy danh sách các học viên KHẢ DỤNG để ghi danh:
+     * Tự động loại bỏ các học viên ĐANG HỌC ở bất kỳ lớp nào trong trung tâm.
+     */
+    @Transactional(readOnly = true)
+    public List<HocVienChiTietResponse> layDanhSachHocVienKhaDung() {
+        List<HocVien> hocViens = hocVienRepository.timHocVienKhaDungGhiDanh();
+        Map<UUID, PhuHuynh> phuHuynhMap = new HashMap<>();
+
+        for (PhuHuynh ph : phuHuynhRepository.findAll()) {
+            phuHuynhMap.put(ph.getId(), ph);
+        }
+
+        List<HocVienChiTietResponse> res = new ArrayList<>();
+        for (HocVien hv : hocViens) {
+            PhuHuynh ph = hv.getPhuHuynhId() != null ? phuHuynhMap.get(hv.getPhuHuynhId()) : null;
+            res.add(new HocVienChiTietResponse(
+                    hv.getId(),
+                    hv.getHoTen(),
+                    hv.getNgaySinh(),
+                    hv.getPhuHuynhId(),
+                    ph != null ? ph.getHoTen() : null,
+                    ph != null ? ph.getSdtZalo() : null,
+                    ph != null ? ph.getEmail() : null
+            ));
+        }
+        return res;
+    }
+
     private boolean isRowEmpty(Row row) {
         for (int c = row.getFirstCellNum(); c < row.getLastCellNum(); c++) {
             Cell cell = row.getCell(c);

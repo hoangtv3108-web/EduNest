@@ -35,6 +35,9 @@ public class HoaDonHocPhi {
     @Column(name = "trang_thai", nullable = false)
     private String trangThai = "CHUA_THANH_TOAN";
 
+    @Column(name = "ngay_thanh_toan")
+    private LocalDate ngayThanhToan;
+
     @Version
     @Column(name = "version", nullable = false)
     private Integer version = 0;
@@ -42,9 +45,11 @@ public class HoaDonHocPhi {
     @Column(name = "ngay_tao", nullable = false)
     private OffsetDateTime ngayTao = OffsetDateTime.now();
 
-    public HoaDonHocPhi() {}
+    public HoaDonHocPhi() {
+    }
 
-    public HoaDonHocPhi(UUID tenantId, UUID ghiDanhId, String kyHocPhi, BigDecimal soTien, Integer soBuoi, LocalDate hanDong) {
+    public HoaDonHocPhi(UUID tenantId, UUID ghiDanhId, String kyHocPhi, BigDecimal soTien, Integer soBuoi,
+            LocalDate hanDong) {
         this.tenantId = tenantId;
         this.ghiDanhId = ghiDanhId;
         this.kyHocPhi = kyHocPhi;
@@ -56,34 +61,91 @@ public class HoaDonHocPhi {
         this.ngayTao = OffsetDateTime.now();
     }
 
-    public UUID getId() { return id; }
-    public void setId(UUID id) { this.id = id; }
+    public UUID getId() {
+        return id;
+    }
 
-    public UUID getTenantId() { return tenantId; }
-    public void setTenantId(UUID tenantId) { this.tenantId = tenantId; }
+    public void setId(UUID id) {
+        this.id = id;
+    }
 
-    public UUID getGhiDanhId() { return ghiDanhId; }
-    public void setGhiDanhId(UUID ghiDanhId) { this.ghiDanhId = ghiDanhId; }
+    public UUID getTenantId() {
+        return tenantId;
+    }
 
-    public String getKyHocPhi() { return kyHocPhi; }
-    public void setKyHocPhi(String kyHocPhi) { this.kyHocPhi = kyHocPhi; }
+    public void setTenantId(UUID tenantId) {
+        this.tenantId = tenantId;
+    }
 
-    public BigDecimal getSoTien() { return soTien; }
-    public void setSoTien(BigDecimal soTien) { this.soTien = soTien; }
+    public UUID getGhiDanhId() {
+        return ghiDanhId;
+    }
 
-    public Integer getSoBuoi() { return soBuoi; }
-    public void setSoBuoi(Integer soBuoi) { this.soBuoi = soBuoi; }
+    public void setGhiDanhId(UUID ghiDanhId) {
+        this.ghiDanhId = ghiDanhId;
+    }
 
-    public LocalDate getHanDong() { return hanDong; }
-    public void setHanDong(LocalDate hanDong) { this.hanDong = hanDong; }
+    public String getKyHocPhi() {
+        return kyHocPhi;
+    }
 
-    public String getTrangThai() { return trangThai; }
-    public void setTrangThai(String trangThai) { this.trangThai = trangThai; }
+    public void setKyHocPhi(String kyHocPhi) {
+        this.kyHocPhi = kyHocPhi;
+    }
 
-    public Integer getVersion() { return version; }
-    public void setVersion(Integer version) { this.version = version; }
+    public BigDecimal getSoTien() {
+        return soTien;
+    }
 
-    public OffsetDateTime getNgayTao() { return ngayTao; }
-    public void setNgayTao(OffsetDateTime ngayTao) { this.ngayTao = ngayTao; }
+    public void setSoTien(BigDecimal soTien) {
+        this.soTien = soTien;
+    }
+
+    public Integer getSoBuoi() {
+        return soBuoi;
+    }
+
+    public void setSoBuoi(Integer soBuoi) {
+        this.soBuoi = soBuoi;
+    }
+
+    public LocalDate getHanDong() {
+        return hanDong;
+    }
+
+    public void setHanDong(LocalDate hanDong) {
+        this.hanDong = hanDong;
+    }
+
+    public String getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(String trangThai) {
+        this.trangThai = trangThai;
+    }
+
+    public LocalDate getNgayThanhToan() {
+        return ngayThanhToan;
+    }
+
+    public void setNgayThanhToan(LocalDate ngayThanhToan) {
+        this.ngayThanhToan = ngayThanhToan;
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+    public OffsetDateTime getNgayTao() {
+        return ngayTao;
+    }
+
+    public void setNgayTao(OffsetDateTime ngayTao) {
+        this.ngayTao = ngayTao;
+    }
 }
-

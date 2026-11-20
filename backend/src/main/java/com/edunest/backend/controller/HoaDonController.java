@@ -31,7 +31,8 @@ public class HoaDonController {
     }
 
     /**
-     * Lấy danh sách hóa đơn học phí của trung tâm, có thể lọc theo lớp hoặc kỳ học phí.
+     * Lấy danh sách hóa đơn học phí của trung tâm, có thể lọc theo lớp hoặc kỳ học
+     * phí.
      */
     @GetMapping
     public ResponseEntity<List<HoaDonHocPhiResponse>> layDanhSachHoaDon(
@@ -51,8 +52,10 @@ public class HoaDonController {
         if (trangThai == null || trangThai.isBlank()) {
             return ResponseEntity.badRequest().build();
         }
+        if (!HocPhiService.TRANG_THAI_HOP_LE.contains(trangThai)) {
+            return ResponseEntity.badRequest().build();
+        }
         hocPhiService.capNhatTrangThai(id, trangThai);
         return ResponseEntity.noContent().build();
     }
 }
-

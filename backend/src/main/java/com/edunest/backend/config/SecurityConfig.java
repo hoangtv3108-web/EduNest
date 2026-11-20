@@ -31,6 +31,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/hello").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/public/tenants").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        // Giai đoạn 3: báo cáo, nhật ký kiểm toán, nhắc nợ chỉ dành cho quản lý trung
+                        // tâm
+                        .requestMatchers("/api/audit-log/**", "/api/bao-cao/**", "/api/nhac-no/**")
+                        .hasRole("CENTER_ADMIN")
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter())))
                 // Chạy sau khi JWT đã được xác thực: lấy tenant_id từ token đã ký.
@@ -38,7 +42,10 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /** Đổi realm role của Keycloak (claim realm_access.roles) thành ROLE_CENTER_ADMIN, ROLE_TEACHER, ... */
+    /**
+     * Đổi realm role của Keycloak (claim realm_access.roles) thành
+     * ROLE_CENTER_ADMIN, ROLE_TEACHER, ...
+     */
     private JwtAuthenticationConverter jwtConverter() {
         Converter<Jwt, Collection<GrantedAuthority>> authorities = jwt -> {
             Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");

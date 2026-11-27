@@ -1,5 +1,14 @@
 # Dùng thêm trên máy chủ cloud: mở cổng 80 cho web.
 services:
+  backend:
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/edunest
+      DB_USER: edunest_app
+      DB_PASSWORD: ${DB_PASSWORD:?Thiếu DB_PASSWORD trong .env}
+      FLYWAY_USER: edunest_owner
+      FLYWAY_PASSWORD: ${FLYWAY_PASSWORD:?Thiếu FLYWAY_PASSWORD trong .env}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:?Thiếu KEYCLOAK_CLIENT_SECRET trong .env}
+
   frontend:
     ports:
       - "80:80"

@@ -7,6 +7,8 @@ RUN mvn -B -q package -DskipTests
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
+RUN useradd --system --uid 10001 edunest
 COPY --from=build /app/target/*.jar app.jar
+USER edunest
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

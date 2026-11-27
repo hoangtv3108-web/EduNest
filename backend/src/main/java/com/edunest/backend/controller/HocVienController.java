@@ -4,6 +4,7 @@ import com.edunest.backend.dto.ExcelPreviewResponse;
 import com.edunest.backend.dto.HocVienChiTietResponse;
 import com.edunest.backend.dto.ImportExcelResponse;
 import com.edunest.backend.service.HocVienExcelService;
+import com.edunest.backend.util.UploadGuard;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +27,7 @@ public class HocVienController {
      */
     @PostMapping(value = "/excel/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ExcelPreviewResponse> previewExcel(@RequestParam("file") MultipartFile file) {
+        UploadGuard.kiemTraExcel(file);
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
@@ -38,6 +40,7 @@ public class HocVienController {
      */
     @PostMapping(value = "/excel/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ImportExcelResponse> importExcel(@RequestParam("file") MultipartFile file) {
+        UploadGuard.kiemTraExcel(file);
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }

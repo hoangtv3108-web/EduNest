@@ -30,12 +30,20 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/api/hello").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/public/tenants").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
-                        // Giai đoạn 3: báo cáo, nhật ký kiểm toán, nhắc nợ chỉ dành cho quản lý trung
-                        // tâm
-                        .requestMatchers("/api/audit-log/**", "/api/bao-cao/**", "/api/nhac-no/**")
-                        .hasRole("CENTER_ADMIN")
-                        .anyRequest().authenticated())
+                        .requestMatchers("/actuator/health", "/actuator/health/**", "/error").permitAll()
+                        .requestMatchers("/api/tenant/current").authenticated()
+                        // Chỉ quản lý trung tâm
+                        .requestMatchers("/api/audit-log/**", "/api/bao-cao/**", "/api/nhac-no/**",
+                                "/api/hoa-don/**", "/api/ghi-danh/**", "/api/hoc-vien/excel/**")
+                                .hasRole("CENTER_ADMIN")
+                        // Giáo viên: xem lớp/học viên, điểm danh
+                        .requestMatchers(HttpMethod.GET, "/api/lop/**", "/api/hoc-vien/**")
+                                .hasAnyRole("CENTER_ADMIN", "TEACHER")
+                        .requestMatchers("/api/diem-danh/**").hasAnyRole("CENTER_ADMIN", "TEACHER")
+                        // Còn lại trong /api (tạo/sửa/xóa lớp, buổi học...): chỉ quản lý
+                        .requestMatchers("/api/**").hasRole("CENTER_ADMIN")
+                        // Mặc định từ chối mọi đường dẫn chưa khai báo
+                        .anyRequest().denyAll())
                 .oauth2ResourceServer(oauth -> oauth.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter())))
                 // Chạy sau khi JWT đã được xác thực: lấy tenant_id từ token đã ký.
                 .addFilterAfter(new TenantContextFilter(), BearerTokenAuthenticationFilter.class);

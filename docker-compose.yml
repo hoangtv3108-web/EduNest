@@ -60,6 +60,9 @@ services:
       - backend
     ports:
       - "3000:80"
+      - "3443:443"
+    volumes:
+      - ./certs:/etc/nginx/certs:ro
 
 volumes:
   pgdata:

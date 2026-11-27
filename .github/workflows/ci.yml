@@ -1,10 +1,16 @@
 name: CI
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   backend:
     runs-on: ubuntu-latest
-
     services:
       postgres:
         image: postgres:18
@@ -19,11 +25,9 @@ jobs:
           --health-interval 5s
           --health-timeout 3s
           --health-retries 10
-
     steps:
       - uses: actions/checkout@v4
 
-      # Khởi tạo roles và database giống hệt môi trường cục bộ
       - name: Setup PostgreSQL Roles
         run: |
           docker cp db/init/01_roles.sql $(docker ps -qf "name=postgres"):/01_roles.sql
@@ -46,6 +50,13 @@ jobs:
           FLYWAY_PASSWORD: edunest_owner
           KEYCLOAK_ISSUER_URI: http://localhost:8081/realms/edunest
 
+      - name: Lưu báo cáo test
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: backend/target/surefire-reports
+
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -53,7 +64,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: npm install && npm run build
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci && npm run build
         working-directory: frontend
 
   compose-smoke:
@@ -61,12 +74,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Tạo chứng chỉ HTTPS dev
+        run: |
+          mkdir -p certs
+          openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
+            -keyout certs/edunest.key -out certs/edunest.crt \
+            -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost"
       - run: docker compose up -d --build
-      - run: |
+      - name: Chờ backend sẵn sàng
+        run: |
           for i in $(seq 1 30); do
             curl -sf http://localhost:8080/api/hello && exit 0
             sleep 3
           done
           docker compose logs
           exit 1
-      - run: docker compose down -v
+      - name: Kiểm tra HTTPS và chuyển hướng
+        run: |
+          curl -ksf -o /dev/null https://localhost:3443/
+          curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ | grep 301
+      - name: Dọn dẹp
+        if: always()
+        run: docker compose down -v

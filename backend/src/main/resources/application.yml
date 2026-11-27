@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
   mail:
     host: ${SMTP_HOST:}           
     port: ${SMTP_PORT:587}
@@ -20,6 +24,13 @@ spring:
         jwt:
           issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/edunest}
           jwk-set-uri: ${KEYCLOAK_JWK_SET_URI:http://localhost:8081/realms/edunest/protocol/openid-connect/certs}
+
+server:
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-exception: false
 
 keycloak:
   base-url: ${KEYCLOAK_BASE_URL:http://localhost:8081}
